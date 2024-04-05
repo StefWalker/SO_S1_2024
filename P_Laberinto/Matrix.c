@@ -1,7 +1,5 @@
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <unistd.h>  //Header file for sleep(). man 3 sleep for details. 
-#include <pthread.h> 
+#include <stdio.h>
+#include <stdlib.h>
 
 #define MAX_ROWS 100
 #define MAX_COLS 100
@@ -50,30 +48,7 @@ void printMatrix(char matrix[MAX_ROWS][MAX_COLS], int rows, int cols) {
     }
 }
 
-int matrix[2][3] = { {1, 4, 2}, {3, 6, 8} };
-// A normal C function that is executed as a thread  
-// when its name is specified in pthread_create() 
-void *myThreadFun(void *vargp) 
-{ 
-    sleep(1); 
-    printf("Printing GeeksQuiz from Thread \n"); 
-    printf("%d", matrix[0][2]); 
-    return NULL; 
-} 
-
-void readFile()
-{
-    FILE *fptr;
-
-    // Open a file in read mode
-    fptr = fopen("filename.txt", "r");
-
-    // Store the content of the file
-    char myString[100];
-}
-   
-int main() 
-{ 
+int main() {
     char matrix[MAX_ROWS][MAX_COLS];
     int rows, cols;
 
@@ -90,10 +65,5 @@ int main()
     printf("Matriz leída desde el archivo:\n");
     printMatrix(matrix, rows, cols);
 
-    pthread_t thread_id; 
-    printf("Before Thread\n"); 
-    pthread_create(&thread_id, NULL, myThreadFun, NULL); 
-    pthread_join(thread_id, NULL); 
-    printf("After Thread\n"); 
-    exit(0); 
+    return 0;
 }
