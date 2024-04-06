@@ -50,35 +50,78 @@ void printMatrix(char matrix[MAX_ROWS][MAX_COLS], int rows, int cols) {
     }
 }
 
-int matrix[2][3] = { {1, 4, 2}, {3, 6, 8} };
-// A normal C function that is executed as a thread  
-// when its name is specified in pthread_create() 
-void *myThreadFun(void *vargp) 
-{ 
-    sleep(1); 
-    printf("Printing GeeksQuiz from Thread \n"); 
-    printf("%d", matrix[0][2]); 
-    return NULL; 
-} 
+// Estructura para los argumentos del hilo
+typedef struct {
+    char matrix[MAX_ROWS][MAX_COLS];
+    int rows;
+    int cols;
+} ThreadArgs;
 
-void readFile()
-{
-    FILE *fptr;
+// Función que el hilo ejecutará
+void *traverseMatrix(void *arg) {
+    ThreadArgs *args = (ThreadArgs *)arg;
 
-    // Open a file in read mode
-    fptr = fopen("filename.txt", "r");
+    int x = 0; // Posición inicial en x
+    int y = 0; // Posición inicial en y
+    int dx = 1; // Dirección de movimiento en x (1 para la derecha, -1 para la izquierda)
+    int dy = 0; // Dirección de movimiento en y (1 para abajo, -1 para arriba)
 
-    // Store the content of the file
-    char myString[100];
+    // Recorrer la matriz
+    while (1) {
+        // Comprobar si estamos fuera de los límites de la matriz
+        if (x < 0 || x >= args->cols || y < 0 || y >= args->rows) {
+            break;
+        }
+        if ( x+1 <= args->cols) {
+            
+            if (dx != 0) { // Si estábamos moviéndonos horizontalmente
+                // Comprobar si encontramos una pared ('*')
+                if (args->matrix[y][x+1] == '*') {
+                    // Cambiar la dirección de movimiento
+                    
+                        // Intentar moverse hacia abajo
+                        dx = 0;
+                        dy = 1;
+                } 
+            }
+        }
+        if (y+1 <= args->rows){ 
+            if (dy != 0) { // Si estábamos moviéndonos verticalmente
+                if (args->matrix[y+1][x] == '*') {
+                    // Cambiar la dirección de movimiento
+                    
+                    // Intentar moverse hacia la derecha
+                        dx = 1;
+                        dy = 0;
+                } 
+            }
+        }
+    
+     
+       
+        // Poner 'x' en la casilla actual
+        args->matrix[y][x] = 'x';
+
+        // Imprimir la matriz modificada
+        system("clear"); // Limpiar la pantalla (compatible con sistemas Unix)
+        printf("Matriz modificada:\n");
+        printMatrix(args->matrix, args->rows, args->cols);
+        sleep(1); // Esperar un segundo antes de avanzar
+
+        // Moverse en la dirección actual
+        x += dx;
+        y += dy;
+    }
+
+    return NULL;
 }
-   
-int main() 
-{ 
+
+int main() {
     char matrix[MAX_ROWS][MAX_COLS];
     int rows, cols;
 
     // Nombre del archivo
-    const char* filename = "/home/stef/Desktop/Git/SO_S1_2024/laberinto.txt";
+     const char* filename = "/Users/admin/Documents/1 Semestre 2024/SO/SO_S1_2024/laberinto.txt";
 
     // Leer la matriz desde el archivo
     if (readMatrixFromFile(filename, matrix, &rows, &cols) != 0) {
@@ -90,10 +133,23 @@ int main()
     printf("Matriz leída desde el archivo:\n");
     printMatrix(matrix, rows, cols);
 
-    pthread_t thread_id; 
-    printf("Before Thread\n"); 
-    pthread_create(&thread_id, NULL, myThreadFun, NULL); 
-    pthread_join(thread_id, NULL); 
-    printf("After Thread\n"); 
-    exit(0); 
+    // Crear la estructura de argumentos para el hilo
+    ThreadArgs args = {
+        .rows = rows,
+        .cols = cols
+    };
+
+    // Copiar la matriz al argumento del hilo
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            args.matrix[i][j] = matrix[i][j];
+        }
+    }
+
+    pthread_t thread_id;
+    printf("Before Thread\n");
+    pthread_create(&thread_id, NULL, traverseMatrix, (void *)&args);
+    pthread_join(thread_id, NULL);
+    printf("After Thread\n");
+    return 0;
 }
