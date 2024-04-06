@@ -6,6 +6,9 @@
 #define MAX_ROWS 100
 #define MAX_COLS 100
 
+//PROTOTIPOS
+void *traverseMatrix(void *arg);
+
 // Función para leer datos desde un archivo y cargarlos en una matriz
 int readMatrixFromFile(const char* filename, char matrix[MAX_ROWS][MAX_COLS], int *rows, int *cols) {
     FILE *file = fopen(filename, "r");
@@ -55,53 +58,102 @@ typedef struct {
     char matrix[MAX_ROWS][MAX_COLS];
     int rows;
     int cols;
+    int x ; // Posición inicial en x
+    int y ; // Posición inicial en y
+    int dx; // Dirección de movimiento en x (1 para la derecha, -1 para la izquierda)
+    int dy;
+    char simbolo; 
 } ThreadArgs;
+
+
+void createNewThread(ThreadArgs *args,char new_simbol) {
+    pthread_t thread_id;
+    //printf("Creating new thread to continue in direction (%d, %d)\n", args->dx, args->dy);
+    
+    // Copiar la matriz al argumento del hilo
+    ThreadArgs new_args = *args;
+    new_args.simbolo = new_simbol;
+    
+    pthread_create(&thread_id, NULL, traverseMatrix, (void *)&new_args);
+    pthread_join(thread_id, NULL);
+}
 
 // Función que el hilo ejecutará
 void *traverseMatrix(void *arg) {
     ThreadArgs *args = (ThreadArgs *)arg;
 
-    int x = 0; // Posición inicial en x
-    int y = 0; // Posición inicial en y
-    int dx = 1; // Dirección de movimiento en x (1 para la derecha, -1 para la izquierda)
-    int dy = 0; // Dirección de movimiento en y (1 para abajo, -1 para arriba)
+    //int x = 0; // Posición inicial en x
+    //int y = 0; // Posición inicial en y
+    //int dx = 1; // Dirección de movimiento en x (1 para la derecha, -1 para la izquierda)
+    //int dy = 0; // Dirección de movimiento en y (1 para abajo, -1 para arriba)
 
     // Recorrer la matriz
     while (1) {
+        // Poner 'x' en la casilla actual
+        args->matrix[args->y][args->x] = args->simbolo;
+
         // Comprobar si estamos fuera de los límites de la matriz
-        if (x < 0 || x >= args->cols || y < 0 || y >= args->rows) {
+        if (args->y == args->rows){
+            //tratar de ir hacia derecha
+            printf("llegue al final de abajo");
+            args->dx = 1;
+            args->dy = 0;
+            args->matrix[args->y][args->x] = args->simbolo;
+            args->x = args->x+1;
+            createNewThread(args,'O');
+
             break;
         }
-        if ( x+1 <= args->cols) {
+        if (args->x == args->cols) {
+            //tratar de ir hacie abajo
+            args->dx = 0;
+            args->dy = 1;
+            args->matrix[args->y][args->x] = args->simbolo;
+            args->x = args->y+1;
+            createNewThread(args,'C');
+            break;;
+        }
+        if(args->y-1 < 0){
+
+
+        }
+
             
-            if (dx != 0) { // Si estábamos moviéndonos horizontalmente
-                // Comprobar si encontramos una pared ('*')
-                if (args->matrix[y][x+1] == '*') {
-                    // Cambiar la dirección de movimiento
-                    
-                        // Intentar moverse hacia abajo
-                        dx = 0;
-                        dy = 1;
-                } 
+        if (args->dx != 0) { // Si estábamos moviéndonos horizontalmente
+        // Comprobar si encontramos una pared ('*')
+            if (args->matrix[args->y][args->x+1] == '*') {
+                // Cambiar la dirección de movimiento
+                
+                    // Intentar moverse hacia abajo
+                    args->dx = 0;
+                    args->dy = 1;
+                    args->matrix[args->y][args->x] = args->simbolo;
+                    args->y = args->y +1;
+                    createNewThread(args,'C');
+                    return NULL;
+            
+                
             }
         }
-        if (y+1 <= args->rows){ 
-            if (dy != 0) { // Si estábamos moviéndonos verticalmente
-                if (args->matrix[y+1][x] == '*') {
-                    // Cambiar la dirección de movimiento
-                    
-                    // Intentar moverse hacia la derecha
-                        dx = 1;
-                        dy = 0;
-                } 
-            }
+       
+        if (args->dy != 0) { // Si estábamos moviéndonos verticalmente
+            if (args->matrix[args->y+1][args->x] == '*') {
+                // Cambiar la dirección de movimiento
+                
+                // Intentar moverse hacia la derecha
+                args->dx = 1;
+                args->dy = 0;
+                args->matrix[args->y][args->x] = args->simbolo;
+                args->x = args->x+1;
+                createNewThread(args,'O');
+
+
+                return NULL;
+            } 
         }
+        
     
      
-       
-        // Poner 'x' en la casilla actual
-        args->matrix[y][x] = 'x';
-
         // Imprimir la matriz modificada
         system("clear"); // Limpiar la pantalla (compatible con sistemas Unix)
         printf("Matriz modificada:\n");
@@ -109,12 +161,15 @@ void *traverseMatrix(void *arg) {
         sleep(1); // Esperar un segundo antes de avanzar
 
         // Moverse en la dirección actual
-        x += dx;
-        y += dy;
+        args->x += args->dx;
+        args->y += args->dy;
+
     }
 
     return NULL;
 }
+
+
 
 int main() {
     char matrix[MAX_ROWS][MAX_COLS];
@@ -136,7 +191,12 @@ int main() {
     // Crear la estructura de argumentos para el hilo
     ThreadArgs args = {
         .rows = rows,
-        .cols = cols
+        .cols = cols,
+        .x = 0, // Posición inicial en x
+        .y = 0, // Posición inicial en y
+        .dx = 1, // Dirección de movimiento en x (1 para la derecha, -1 para la izquierda)
+        .dy = 0,
+        .simbolo = 'X' 
     };
 
     // Copiar la matriz al argumento del hilo
