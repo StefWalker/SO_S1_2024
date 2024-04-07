@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 // Definimos tamaño de la matriz
 #define ROWS 8
@@ -19,7 +20,7 @@
 int leer_matrix_file(const char* filename, char matrix[ROWS][COLS]);
 
 // Nombre del archivo
-const char* filename = "/Users/admin/Documents/1 Semestre 2024/SO/SO_S1_2024/P_Laberinto/laberinto.txt";
+const char* filename = "laberinto.txt";
 
 // Definición del laberinto base con los chars designados
 char laberinto[ROWS][COLS];
@@ -65,6 +66,7 @@ typedef struct {
     int row;
     int col;
     int pasos;
+    int direccion;
 } ThreadArgs;
 
 // Función para mostrar el laberinto
@@ -88,56 +90,72 @@ void recorrido_thread(ThreadArgs *args) {
     int row = args->row;
     int col = args->col;
     int pasos = args->pasos;
+    int direccion = args->direccion;
+    bool activo = true;
 
-    // Marcar la posición actual como visitada
-    visitado[row][col] = 1;
+    while(activo){
+        // Marcar la posición actual como visitada
+        visitado[row][col] = 1;
 
-    // Mostrar el laberinto
-    // Utilizamos mutex para evitar el choque de datos cada vez que un hilo quiera cammbiar la cantidad de pasos y imprime la matriz
-    pthread_mutex_lock(&mutex); 
-    system("clear");
-    printf("Cantidad de pasos necesarios: %d\n", pasos);
-    print_laberinto();
-    pthread_mutex_unlock(&mutex);
-    // Simulacion de datos
-    sleep(1); 
+        // Mostrar el laberinto
+        // Utilizamos mutex para evitar el choque de datos cada vez que un hilo quiera cammbiar la cantidad de pasos y imprime la matriz
+        pthread_mutex_lock(&mutex); 
+        //system("clear");
+        printf("Cantidad de pasos necesarios: %d\n", pasos);
+        print_laberinto();
+        pthread_mutex_unlock(&mutex);
+        // Simulacion de datos
+        sleep(1); 
 
-    // Verificar la salida
-    if (laberinto[row][col] == '/') {
-        printf("Hilo exitoso! Pasos totales: %d\n", pasos);
-        pthread_exit(NULL);
-    }
+        // Verificar la salida
+        if (laberinto[row][col] == '/') {
+            printf("Hilo exitoso! Pasos totales: %d\n", pasos);
+            pthread_exit(NULL);
+        }
 
-    // Marcar la posición actual en el laberinto
-    laberinto[row][col] = 'x';
+        // Marcar la posición actual en el laberinto
+        laberinto[row][col] = 'x';
 
-    // Direcciones posibles
-    // d_row -1: izquierda
-    // d_row 1:  derecha
-    // d_col -1: arriba
-    // d_col 1:  abajo
-    int d_row[] = {-1, 1, 0, 0};
-    int d_col[] = {0, 0, -1, 1};
+        // Direcciones posibles
+        // d_row -1: izquierda
+        // d_row 1:  derecha
+        // d_col -1: arriba
+        // d_col 1:  abajo
+        int d_row[] = {-1, 1, 0, 0};
+        int d_col[] = {0, 0, -1, 1};
 
-    // Explorar las direcciones
-    for (int i = 0; i < 4; i++) {
-        int new_row = row + d_row[i];
-        int new_col = col + d_col[i];
+    
+        // Explorar las direcciones
+        for (int i = 0; i < 4; i++) {
+            int new_row = row + d_row[i];
+            int new_col = col + d_col[i];
 
-        if (is_valid(new_row, new_col)) {
-            // Crear un nuevo hilo
-            // Con sus respectivos cambios de direccion
-            ThreadArgs *new_args = (ThreadArgs *)malloc(sizeof(ThreadArgs));
-            new_args->row = new_row;
-            new_args->col = new_col;
-            new_args->pasos = pasos + 1;
+            if (is_valid(new_row, new_col)) {
+                // Crear un nuevo hilo
+                // Con sus respectivos cambios de direccion
+                if(i != direccion){
+                    ThreadArgs *new_args = (ThreadArgs *)malloc(sizeof(ThreadArgs));
+                    new_args->row = new_row;
+                    new_args->col = new_col;
+                    new_args->pasos = pasos + 1;
+                    new_args->direccion = i;
 
-            pthread_t thread;
-            pthread_create(&thread, NULL, (void *(*)(void *))recorrido_thread, new_args);
+                    pthread_t thread;
+                    pthread_create(&thread, NULL, (void *(*)(void *))recorrido_thread, new_args);
+                }
+                else{
+                    row = new_row;
+                    col = new_col;
+                    pasos = pasos + 1;
+                }
+            }
+            if(!is_valid(new_row, new_col) && direccion == i) {
+                activo = false;
+            }
         }
     }
-
     // Finalizamos el hilo
+    printf("Finalizo hilo con direccion %d y pasos totales: %d\n", direccion, pasos);
     pthread_exit(NULL);
 }
 
@@ -151,6 +169,7 @@ int main() {
     args->row = 0;
     args->col = 0;
     args->pasos = 0;
+    args->direccion = 0;
 
     recorrido_thread(args);
 
