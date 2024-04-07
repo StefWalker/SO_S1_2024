@@ -3,20 +3,29 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define ROWS 8
-#define COLS 8
+
+#define ROWS 9
+#define COLS 9
+int readMatrixFromFile(const char* filename, char matrix[ROWS][COLS]);
+
+
+// Nombre del archivo
+const char* filename = "/Users/admin/Documents/1 Semestre 2024/SO/SO_S1_2024/laberinto.txt";
+
 
 // Definición del laberinto
-char maze[ROWS][COLS] = {
-    {' ', '*', ' ', ' ', ' ', '*', '*', '*'},
-    {' ', '*', ' ', '*', ' ', ' ', ' ', ' '},
-    {' ', '*', ' ', '*', ' ', '*', '*', '*'},
-    {' ', '*', ' ', '*', '*', '*', '*', '*'},
-    {' ', ' ', ' ', '*', ' ', ' ', ' ', '*'},
-    {'*', '*', ' ', '*', ' ', '*', ' ', ' '},
-    {' ', '*', ' ', '*', ' ', '*', ' ', ' '},
-    {' ', ' ', ' ', ' ', ' ', '*', '/', ' '}
-};
+char maze[ROWS][COLS];
+//= 
+// {
+//     {' ', '*', ' ', ' ', ' ', '*', '*', '*'},
+//     {' ', '*', ' ', '*', ' ', ' ', ' ', ' '},
+//     {' ', '*', ' ', '*', ' ', '*', '*', '*'},
+//     {' ', '*', ' ', '*', '*', '*', '*', '*'},
+//     {' ', ' ', ' ', '*', ' ', ' ', ' ', '*'},
+//     {'*', '*', ' ', '*', ' ', '*', ' ', ' '},
+//     {' ', '*', ' ', '*', ' ', '*', ' ', ' '},
+//     {' ', ' ', ' ', ' ', ' ', '*', '/', ' '}
+// };
 
 // Matriz para registrar celdas visitadas por cada hilo
 int visited[ROWS][COLS] = {0};
@@ -29,6 +38,7 @@ typedef struct {
     int row;
     int col;
     int steps;
+    int mark;
 } ThreadArgs;
 
 // Función para mostrar el laberinto
@@ -62,8 +72,10 @@ void move(ThreadArgs *args) {
     // Mostrar el laberinto
     pthread_mutex_lock(&mutex);
     printf("Hilo en la posición (%d, %d), pasos: %d\n", row, col, steps);
+    system("clear");
     print_maze();
     pthread_mutex_unlock(&mutex);
+    sleep(1);
 
     // Verificar la salida
     if (maze[row][col] == '/') {
@@ -97,6 +109,10 @@ void move(ThreadArgs *args) {
 }
 
 int main() {
+    if (readMatrixFromFile(filename,maze) != 0) {
+        printf("Error al leer la matriz desde el archivo.\n");
+        return 1;
+    }
     // Iniciar el movimiento desde la posición (0, 0)
     ThreadArgs *args = (ThreadArgs *)malloc(sizeof(ThreadArgs));
     args->row = 0;
@@ -107,3 +123,33 @@ int main() {
 
     return 0;
 }
+
+
+int readMatrixFromFile(const char* filename, char matrix[ROWS][COLS]) {
+    int rows = 0, cols = 0; // Inicializar las variables para el número de filas y columnas
+    int MAX_ROWS = 100,MAX_COLS = 100;
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        printf("Error al abrir el archivo.\n");
+        return -1;
+    }
+
+    char line[MAX_COLS];
+    while (fgets(line, sizeof(line), file) && rows < MAX_ROWS) {
+        int col = 0;
+        for (int i = 0; line[i] != '\0' && col < MAX_COLS; i++) {
+            if (line[i] == '*' || line[i] == ' ' || line[i] == '/' || line[i] == 'x'){
+                matrix[rows][col] = line[i];
+                col++;
+            }
+        }
+        if (col > cols) {
+            cols = col;
+        }
+        (rows)++;
+    }
+
+    fclose(file);
+    return 0;
+}
+
