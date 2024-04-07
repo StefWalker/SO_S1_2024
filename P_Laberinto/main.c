@@ -19,7 +19,7 @@
 int leer_matrix_file(const char* filename, char matrix[ROWS][COLS]);
 
 // Nombre del archivo
-const char* filename = "/home/stef/Desktop/Git/SO_S1_2024/laberinto.txt";
+const char* filename = "/Users/admin/Documents/1 Semestre 2024/SO/SO_S1_2024/P_Laberinto/laberinto.txt";
 
 // Definición del laberinto base con los chars designados
 char laberinto[ROWS][COLS];
