@@ -40,7 +40,6 @@ int leer_matrix_file(const char* filename, char matrix[ROWS][COLS]) {
         printf("Error al abrir el archivo.\n");
         return -1;
     }
-
     char line[MAX_COLS];
     while (fgets(line, sizeof(line), file) && rows < MAX_ROWS) {
         int col = 0;
@@ -56,7 +55,6 @@ int leer_matrix_file(const char* filename, char matrix[ROWS][COLS]) {
         }
         (rows)++;
     }
-
     fclose(file);
     return 0;
 }
@@ -91,17 +89,16 @@ void recorrido_thread(ThreadArgs *args) {
     int col = args->col;
     int pasos = args->pasos;
     int direccion = args->direccion;
+    int contador = 1;
     bool activo = true;
 
     while(activo){
         // Marcar la posición actual como visitada
         visitado[row][col] = 1;
-
-        // Mostrar el laberinto
         // Utilizamos mutex para evitar el choque de datos cada vez que un hilo quiera cammbiar la cantidad de pasos y imprime la matriz
         pthread_mutex_lock(&mutex); 
         //system("clear");
-        printf("Cantidad de pasos necesarios: %d\n", pasos);
+        printf("Cantidad de pasos: %d\n", pasos);
         print_laberinto();
         pthread_mutex_unlock(&mutex);
         // Simulacion de datos
@@ -123,7 +120,6 @@ void recorrido_thread(ThreadArgs *args) {
         // d_col 1:  abajo
         int d_row[] = {-1, 1, 0, 0};
         int d_col[] = {0, 0, -1, 1};
-
     
         // Explorar las direcciones
         for (int i = 0; i < 4; i++) {
@@ -133,7 +129,13 @@ void recorrido_thread(ThreadArgs *args) {
             if (is_valid(new_row, new_col)) {
                 // Crear un nuevo hilo
                 // Con sus respectivos cambios de direccion
-                if(i != direccion){
+                if(i == direccion){
+                    row = new_row;
+                    col = new_col;
+                    pasos ++;
+                    contador ++;
+                }
+                else{
                     ThreadArgs *new_args = (ThreadArgs *)malloc(sizeof(ThreadArgs));
                     new_args->row = new_row;
                     new_args->col = new_col;
@@ -143,11 +145,6 @@ void recorrido_thread(ThreadArgs *args) {
                     pthread_t thread;
                     pthread_create(&thread, NULL, (void *(*)(void *))recorrido_thread, new_args);
                 }
-                else{
-                    row = new_row;
-                    col = new_col;
-                    pasos = pasos + 1;
-                }
             }
             if(!is_valid(new_row, new_col) && direccion == i) {
                 activo = false;
@@ -155,11 +152,12 @@ void recorrido_thread(ThreadArgs *args) {
         }
     }
     // Finalizamos el hilo
-    printf("Finalizo hilo con direccion %d y pasos totales: %d\n", direccion, pasos);
+    printf("Finalizo hilo con direccion %d y pasos totales de este hilo: %d\n", direccion, contador);
     pthread_exit(NULL);
 }
 
 int main() {
+    // Leemos el archivo txt que contiene el laberinto
     if (leer_matrix_file(filename,laberinto) != 0) {
         printf("Error al leer la matriz desde el archivo.\n");
         return 1;
@@ -169,10 +167,9 @@ int main() {
     args->row = 0;
     args->col = 0;
     args->pasos = 0;
-    args->direccion = 0;
+    args->direccion = 1;
 
     recorrido_thread(args);
-
     return 0;
 }
 
