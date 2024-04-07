@@ -162,14 +162,17 @@ int main() {
         printf("Error al leer la matriz desde el archivo.\n");
         return 1;
     }
-    // Iniciar el movimiento desde la posición (0, 0)
-    ThreadArgs *args = (ThreadArgs *)malloc(sizeof(ThreadArgs));
-    args->row = 0;
-    args->col = 0;
-    args->pasos = 0;
-    args->direccion = 1;
+    if(laberinto[0][0] == ' ')
+    {
+        // Iniciar el movimiento desde la posición (0, 0)
+        ThreadArgs *args = (ThreadArgs *)malloc(sizeof(ThreadArgs));
+        args->row = 0;
+        args->col = 0;
+        args->pasos = 0;
+        args->direccion = 0;
 
-    recorrido_thread(args);
+        recorrido_thread(args);
+    }
     return 0;
 }
 
