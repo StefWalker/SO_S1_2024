@@ -1,3 +1,12 @@
+// Principios de Sistemas Operativos IC-6600
+//   Instituto Tecnológico de Costa Rica
+//
+//         Dayron Padilla Cubillo
+//          Dylan Torres Walker 
+// 
+//              Proyecto 1
+//          Laberinto Threads
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -12,7 +21,7 @@ int leer_matrix_file(const char* filename, char matrix[ROWS][COLS]);
 // Nombre del archivo
 const char* filename = "/home/stef/Desktop/Git/SO_S1_2024/laberinto.txt";
 
-// Definición del laberinto
+// Definición del laberinto base con los chars designados
 char laberinto[ROWS][COLS];
 
 // Matriz para registrar celdas visitadas por cada hilo
@@ -24,7 +33,7 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 // Función para leer datos desde un archivo y cargarlos en una matriz
 int leer_matrix_file(const char* filename, char matrix[ROWS][COLS]) {
     int rows = 0, cols = 0; // Inicializar las variables para el número de filas y columnas
-    int MAX_ROWS = 100,MAX_COLS = 100;
+    int MAX_ROWS = 100, MAX_COLS = 100;
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
         printf("Error al abrir el archivo.\n");
@@ -84,12 +93,14 @@ void recorrido_thread(ThreadArgs *args) {
     visitado[row][col] = 1;
 
     // Mostrar el laberinto
-    pthread_mutex_lock(&mutex);
+    // Utilizamos mutex para evitar el choque de datos cada vez que un hilo quiera cammbiar la cantidad de pasos y imprime la matriz
+    pthread_mutex_lock(&mutex); 
     system("clear");
     printf("Cantidad de pasos necesarios: %d\n", pasos);
     print_laberinto();
     pthread_mutex_unlock(&mutex);
-    sleep(1);
+    // Simulacion de datos
+    sleep(1); 
 
     // Verificar la salida
     if (laberinto[row][col] == '/') {
